@@ -62,5 +62,16 @@
         self.MarketOrder(self.liquidContract.Symbol, -1)
         
          
+         
+         #------------------------------------------------------------------------------------------------------------------------
          #**add EventOrder section to make sure a trade isn't placed after a stop is hit and order tickets for
-         #buy and sell match. This is is Boot Camp video for trailing stops 
+         #buy and sell match. This is is Boot Camp video for trailing stops
+         
+         possibly use the following to add breaks after a trade to help prevent lightning orders going through:
+         in def initialze() add:
+            self.period = timedelta(31)
+            self.nextEntryTime = self.Time
+        in OnData where order entry is placed, add:
+            if self.nextEntryTime <= self.Time:
+        in OnDate where exit is placed add:
+            self.nextEntryTime = self.Time +self.period
