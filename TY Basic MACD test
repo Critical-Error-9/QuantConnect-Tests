@@ -6,6 +6,7 @@
         self.TY = self.AddFuture(Futures.Financials.Y10TreasuryNote)
         #Set our expiry filter to return all contracts expiring within 90 days
         self.TY.SetFilter(0, 90)
+        self.SetBrokerageModel(BrokerageName.CharlesSchwab, AccountType.Margin)
     def OnData(self, data):
         
         # Get Liquid Contract: Loop over each available futures chain from slice.FutureChains data
