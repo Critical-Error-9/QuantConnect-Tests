@@ -1,0 +1,43 @@
+# Example of MACD algo in https://www.quantconnect.com/forum/discussion/8502/any-example-of-using-macd-with-takeprofit-and-stop-loss-for-futures/p1
+
+    def Initialize(self):
+        self.SetStartDate(2016, 1, 2)
+        self.SetCash(10000) 
+        self.TY = self.AddFuture(Futures.Financials.Y10TreasuryNote)
+        #Set our expiry filter to return all contracts expiring within 90 days
+        self.TY.SetFilter(0, 90)
+    def OnData(self, data):
+        
+        # Loop over each available futures chain from slice.FutureChains data
+        for chain in slice.FutureChains:
+            
+            #1. Filter to choose popular contracts with OpenInterest > 1000
+            self.popularContracts = [contract for contract in chain.Value if contract.OpenInterest > 10000]
+            
+            #2. If the length of contracts in this chain is zero, continue to the next chain
+            if len(self.popularContracts) == 0:
+                continue
+            
+            #3. Sort our contracts by open interest in descending order and save to sortedByOIContracts
+            sortedByOIContracts = sorted(self.popularContracts, key=lambda k : k.OpenInterest, reverse=True)
+            
+            #4. Save the contract with the highest open interest to self.liquidContract
+            self.liquidContract = sortedByOIContracts[0]
+        
+        #MACD Signal
+        self.macd = self.MACD(contract.Symbol, 12, 26, 9, MovingAverageType.Exponential, Resolution.Minute)
+        tolerance = 0.003
+        signalDeltaPercent = self.macd.Current.Value - self.macd.Signal.Current.Value
+        if signalDeltaPercent < -tolerance:
+        #Go Long
+        self.MarketOrder(self.liquidContract.Symbol, 1)
+        self.StopMarketOrder(self.liquidContract.Symbol, -1, #stop price in pts: entry - X might work)
+            # entry price can be found in EventOrder in BC video
+        self.LimitOrder(self.liquidContract.Symbol, -1, #limit price in pts)
+        if signalDeltaPercent > tolerance:
+        #Go Short
+        self.MarketOrder(self.liquidContract.Symbol, -1)
+        
+         
+         #**add EventOrder section to make sure a trade isn't placed after a stop is hit and order tickets for
+         #buy and sell match. This is is Boot Camp video for trailing stops 
